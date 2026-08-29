@@ -1,1 +1,1254 @@
 
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DevKit // Tools untuk Developer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0d10;
+    --panel:#12161a;
+    --panel-2:#161b20;
+    --border:#242b32;
+    --border-soft:#1b2127;
+    --text:#dce3e8;
+    --muted:#71808c;
+    --muted-2:#4b5560;
+
+    --tag:#4fd8c4; --attr:#f2a65a; --val:#b79cff; --comment:#7fa37a;
+    --cdata:#e39bd6; --punct:#56636e; --decl:#7fa3ff;
+    --key:#4fd8c4; --str:#b9e08a; --num:#f2a65a; --bool:#7fa3ff; --null:#ff8fa3;
+
+    --error:#ff6b6b; --success:#59d68c;
+
+    --c-fmt:#4fd8c4; --c-conv:#b79cff; --c-txt:#f2a65a; --c-sec:#ff8fa3;
+
+    --g0:#4fd8c4; --g1:#f2a65a; --g2:#b79cff; --g3:#ff8fa3; --g4:#7fa3ff;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:'Space Grotesk',sans-serif;
+    display:flex; flex-direction:column; min-height:100vh;
+  }
+  .spectrum{
+    height:3px; width:100%; flex-shrink:0;
+    background:linear-gradient(90deg,var(--g0),var(--g1),var(--g2),var(--g3),var(--g4),var(--g0));
+    background-size:200% 100%; animation:drift 14s linear infinite;
+  }
+  @keyframes drift{ to{ background-position:200% 0; } }
+
+  header{
+    padding:20px 28px; display:flex; align-items:center; justify-content:space-between;
+    gap:14px; flex-wrap:wrap; border-bottom:1px solid var(--border-soft); flex-shrink:0;
+  }
+  header h1{ font-size:19px; margin:0; font-weight:700; cursor:pointer; }
+  header h1 .slash{ color:var(--muted-2); font-weight:400; margin:0 6px; }
+  header .tagline{ font-size:12.5px; color:var(--muted); display:block; margin-top:2px; font-weight:400; }
+  .brand-wrap{display:flex; flex-direction:column;}
+  #search{
+    width:260px; max-width:60vw; font-family:'JetBrains Mono',monospace; font-size:12.5px;
+    background:var(--panel); border:1px solid var(--border); color:var(--text);
+    padding:9px 12px; border-radius:8px; outline:none;
+  }
+  #search::placeholder{color:var(--muted-2);}
+  #search:focus{border-color:#39434c;}
+
+  #view-hub{ padding:8px 28px 40px; }
+  .cat-block{ margin-top:30px; }
+  .cat-head{ display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+  .cat-dot{ width:9px; height:9px; border-radius:50%; }
+  .cat-head h2{ font-size:13px; text-transform:uppercase; letter-spacing:1px; margin:0; color:var(--muted); font-weight:600;}
+  .cat-line{ flex:1; height:1px; background:var(--border-soft); }
+  .card-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:12px; }
+  .card{
+    background:var(--panel); border:1px solid var(--border); border-top-width:3px;
+    border-radius:9px; padding:16px; cursor:pointer; transition:transform .1s, border-color .15s;
+    text-align:left;
+  }
+  .card:hover{ transform:translateY(-2px); border-color:#39434c; }
+  .card .icon{ font-family:'JetBrains Mono',monospace; font-size:15px; opacity:.85; margin-bottom:8px; display:block;}
+  .card h3{ font-size:14px; margin:0 0 5px; font-weight:600; }
+  .card p{ font-size:12px; color:var(--muted); margin:0; line-height:1.5; }
+  .card.hidden{ display:none; }
+  .cat-block.hidden{ display:none; }
+  #no-results{ display:none; color:var(--muted); font-size:13px; padding:30px 0; text-align:center; }
+
+  #view-tool{ flex:1; display:flex; flex-direction:column; min-height:0; }
+  .tool-topbar{
+    display:flex; align-items:center; gap:12px; padding:12px 28px;
+    background:var(--panel-2); border-bottom:1px solid var(--border-soft); flex-shrink:0; flex-wrap:wrap;
+  }
+  .tool-topbar button.back{
+    background:transparent; border:1px solid var(--border); color:var(--muted);
+    border-radius:7px; padding:6px 12px; font-size:12.5px; cursor:pointer; font-family:'Space Grotesk',sans-serif;
+  }
+  .tool-topbar button.back:hover{ border-color:#39434c; color:var(--text); }
+  .tool-topbar h2{ font-size:15px; margin:0; font-weight:600; }
+  .tool-badge{
+    font-size:11px; font-family:'JetBrains Mono',monospace; padding:3px 9px; border-radius:20px;
+    border:1px solid var(--border); color:var(--muted);
+  }
+  #tool-body{ flex:1; display:flex; flex-direction:column; min-height:0; }
+
+  .toolbar{
+    display:flex; flex-wrap:wrap; gap:8px; align-items:center; padding:14px 28px;
+    border-bottom:1px solid var(--border-soft); background:var(--panel-2); flex-shrink:0;
+  }
+  .toolbar label{ font-size:12px; color:var(--muted); margin-right:5px; }
+  .toolbar .grow{ flex:1; }
+  select, button, input[type=number]{
+    font-family:'Space Grotesk',sans-serif; font-size:13px; border-radius:7px;
+    border:1px solid var(--border); background:var(--panel); color:var(--text);
+    padding:8px 13px; cursor:pointer;
+  }
+  input[type=number]{ width:80px; cursor:text; }
+  input[type=checkbox]{ cursor:pointer; }
+  button:hover, select:hover{ border-color:#39434c; }
+  button:active{ transform:translateY(1px); }
+  button.primary{
+    background:linear-gradient(180deg,#1a5f52,#154a41); border-color:#1e6f60; color:#c9fff2; font-weight:600;
+  }
+  button.primary:hover{ border-color:#28897a; }
+  button.ghost{ background:transparent; }
+  .sep{ width:1px; height:22px; background:var(--border); margin:0 4px; }
+  .opt-group{ display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--muted); }
+
+  #tool-content{ flex:1; display:flex; flex-direction:column; min-height:0; }
+  .dual{ flex:1; display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--border-soft); min-height:0; }
+  @media (max-width:840px){ .dual{ grid-template-columns:1fr; grid-template-rows:1fr 1fr; } }
+  .pane{ background:var(--bg); display:flex; flex-direction:column; min-height:0; }
+  .pane-head{
+    padding:9px 14px; background:var(--panel); border-bottom:1px solid var(--border-soft);
+    font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--muted); flex-shrink:0;
+  }
+  textarea.code-area, .code-area{
+    flex:1; min-height:200px; font-family:'JetBrains Mono',monospace; font-size:12.5px; line-height:20px;
+    padding:14px 16px; overflow:auto; white-space:pre-wrap; word-break:break-word;
+  }
+  textarea.code-area{ background:var(--bg); color:var(--text); border:none; outline:none; resize:none; }
+  textarea.code-area::placeholder{ color:var(--muted-2); }
+  .code-area.out{ color:var(--text); margin:0; }
+  .code-area .empty-hint{ color:var(--muted-2); font-style:italic; }
+
+  .single-pane{ flex:1; display:flex; flex-direction:column; min-height:0; }
+
+  #error-banner{
+    display:none; padding:10px 16px; background:#241315; border-bottom:1px solid #3a2020;
+    color:var(--error); font-family:'JetBrains Mono',monospace; font-size:12px; white-space:pre-wrap; flex-shrink:0;
+  }
+  #error-banner.show{ display:block; }
+
+  .statsbar{
+    flex-shrink:0; display:flex; flex-wrap:wrap; gap:18px; align-items:center; padding:10px 28px;
+    background:var(--panel-2); border-top:1px solid var(--border-soft);
+    font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--muted);
+  }
+  .statsbar b{ color:var(--text); font-weight:500; }
+
+  .tok-punct{color:var(--punct);} .tok-tag{color:var(--tag); font-weight:600;}
+  .tok-attr{color:var(--attr);} .tok-val{color:var(--val);}
+  .tok-comment{color:var(--comment); font-style:italic;} .tok-cdata{color:var(--cdata);}
+  .tok-decl{color:var(--decl);} .tok-text{color:var(--text);}
+  .tok-key{color:var(--key);} .tok-str{color:var(--str);} .tok-num{color:var(--num);}
+  .tok-bool{color:var(--bool);} .tok-null{color:var(--null);}
+
+  .list-panel{ flex:1; overflow:auto; padding:16px 28px; }
+  .list-row{
+    display:flex; align-items:center; gap:12px; padding:10px 14px; background:var(--panel);
+    border:1px solid var(--border); border-radius:8px; margin-bottom:8px;
+    font-family:'JetBrains Mono',monospace; font-size:12.5px;
+  }
+  .list-row .lbl{ color:var(--muted); width:80px; flex-shrink:0; font-family:'Space Grotesk',sans-serif; font-size:12px;}
+  .list-row .val{ flex:1; word-break:break-all; color:var(--text); }
+  .list-row button{ padding:5px 10px; font-size:11.5px; flex-shrink:0; }
+
+  .case-out{
+    margin:16px 28px; padding:14px 16px; background:var(--panel); border:1px solid var(--border);
+    border-radius:8px; font-family:'JetBrains Mono',monospace; font-size:13px; white-space:pre-wrap; word-break:break-word;
+    min-height:60px;
+  }
+  .case-buttons{ display:flex; flex-wrap:wrap; gap:8px; padding:0 28px 16px; }
+
+  #toast{
+    position:fixed; bottom:22px; right:22px; background:var(--panel); border:1px solid #1e6f60;
+    color:#c9fff2; padding:9px 16px; border-radius:8px; font-size:12.5px; font-family:'Space Grotesk',sans-serif;
+    opacity:0; transform:translateY(8px); transition:opacity .2s, transform .2s; pointer-events:none; z-index:50;
+  }
+  #toast.show{ opacity:1; transform:translateY(0); }
+
+  ::-webkit-scrollbar{ width:10px; height:10px; }
+  ::-webkit-scrollbar-track{ background:transparent; }
+  ::-webkit-scrollbar-thumb{ background:#2a323a; border-radius:6px; }
+  ::-webkit-scrollbar-thumb:hover{ background:#39434c; }
+</style>
+</head>
+<body>
+
+  <div class="spectrum"></div>
+
+  <header>
+    <div class="brand-wrap">
+      <h1 id="brand-link">DevKit<span class="slash">//</span>Tools</h1>
+      <span class="tagline">16 tools developer — format, validasi, konversi, generate. Semua jalan di browser kamu.</span>
+    </div>
+    <input id="search" type="text" placeholder="Cari tool… (mis. json, hash, uuid)">
+  </header>
+
+  <div id="view-hub"></div>
+
+  <div id="view-tool" hidden>
+    <div class="tool-topbar">
+      <button class="back" id="btn-back">← Semua tools</button>
+      <h2 id="tool-title"></h2>
+      <span class="tool-badge" id="tool-badge"></span>
+    </div>
+    <div id="tool-body"></div>
+  </div>
+
+  <div id="toast">Disalin</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============ CATEGORY & TOOL METADATA ============ */
+  var CATS = {
+    fmt:  {label:'Formatter & Validator', color:'var(--c-fmt)'},
+    conv: {label:'Konverter',             color:'var(--c-conv)'},
+    txt:  {label:'Utilitas Teks',         color:'var(--c-txt)'},
+    sec:  {label:'Keamanan & Generator',  color:'var(--c-sec)'}
+  };
+
+  var TOOLS = [
+    {id:'json-formatter',    cat:'fmt',  icon:'{ }',  title:'JSON Formatter',            desc:'Rapikan, validasi, dan perkecil JSON.'},
+    {id:'xml-formatter',     cat:'fmt',  icon:'</>',  title:'XML Formatter',             desc:'Rapikan, validasi, dan perkecil XML.'},
+    {id:'html-formatter',    cat:'fmt',  icon:'◇',    title:'HTML Formatter',            desc:'Rapikan markup HTML dengan indentasi rapi.'},
+    {id:'css-formatter',     cat:'fmt',  icon:'#',    title:'CSS Formatter',             desc:'Rapikan atau perkecil kode CSS.'},
+    {id:'sql-formatter',     cat:'fmt',  icon:'▦',    title:'SQL Formatter',             desc:'Rapikan query SQL agar mudah dibaca.'},
+
+    {id:'json-xml',          cat:'conv', icon:'⇄',    title:'JSON ↔ XML',                desc:'Konversi dua arah antara JSON dan XML.'},
+    {id:'csv-json',          cat:'conv', icon:'▤',    title:'CSV ↔ JSON',                desc:'Konversi dua arah antara CSV dan JSON.'},
+    {id:'base64',            cat:'conv', icon:'⎘',    title:'Base64 Encode/Decode',      desc:'Ubah teks ke Base64 dan sebaliknya.'},
+    {id:'url-encode',        cat:'conv', icon:'%',    title:'URL Encode/Decode',         desc:'Encode dan decode teks untuk URL.'},
+
+    {id:'case-converter',    cat:'txt',  icon:'Aa',   title:'Case Converter',            desc:'Ubah gaya penulisan: UPPER, camelCase, snake_case, dll.'},
+    {id:'html-entities',     cat:'txt',  icon:'&',    title:'HTML Entity Encode/Decode', desc:'Ubah karakter khusus jadi entity HTML dan sebaliknya.'},
+    {id:'word-counter',      cat:'txt',  icon:'¶',    title:'Word & Character Counter',  desc:'Hitung kata, karakter, kalimat, dan paragraf.'},
+
+    {id:'hash-generator',    cat:'sec',  icon:'◈',    title:'Hash Generator',            desc:'Buat MD5, SHA-1, SHA-256, dan SHA-512 dari teks.'},
+    {id:'uuid-generator',    cat:'sec',  icon:'◌',    title:'UUID Generator',            desc:'Buat UUID v4 acak sebanyak yang kamu mau.'},
+    {id:'password-generator',cat:'sec',  icon:'✦',    title:'Password Generator',        desc:'Buat password acak yang kuat.'},
+    {id:'lorem-ipsum',       cat:'sec',  icon:'❝',    title:'Lorem Ipsum Generator',     desc:'Buat teks placeholder Lorem Ipsum.'}
+  ];
+
+  /* ============ UTILITIES ============ */
+  function escapeHtml(s){
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+  function $(sel, root){ return (root||document).querySelector(sel); }
+  function toast(msg){
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function(){ t.classList.remove('show'); }, 1600);
+  }
+  function copyText(text){
+    if(!text){ toast('Tidak ada yang bisa disalin'); return; }
+    navigator.clipboard.writeText(text).then(function(){ toast('Disalin ke clipboard'); })
+      .catch(function(){ toast('Gagal menyalin'); });
+  }
+  function downloadText(text, filename, mime){
+    var blob = new Blob([text], {type: mime || 'text/plain'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+  function indentUnit(val){ return val === 'tab' ? '\t' : ' '.repeat(parseInt(val,10)); }
+
+  /* ============ MARKUP ENGINE (shared by XML & HTML formatter) ============ */
+  function tokenizeMarkup(xml){
+    var tokenRegex = /(<!--[\s\S]*?-->)|(<!\[CDATA\[[\s\S]*?\]\]>)|(<\?[\s\S]*?\?>)|(<!DOCTYPE[^>]*>)|(<\/[^>]+>)|(<[^>]+>)/g;
+    var tokens = [], lastIndex = 0, m;
+    while ((m = tokenRegex.exec(xml)) !== null) {
+      if (m.index > lastIndex) {
+        var text = xml.slice(lastIndex, m.index);
+        if (text.trim().length) tokens.push({type:'text', value:text.trim()});
+      }
+      if (m[1]) tokens.push({type:'comment', value:m[1]});
+      else if (m[2]) tokens.push({type:'cdata', value:m[2]});
+      else if (m[3]) tokens.push({type:'decl', value:m[3]});
+      else if (m[4]) tokens.push({type:'doctype', value:m[4]});
+      else if (m[5]) tokens.push({type:'close', value:m[5]});
+      else if (m[6]) {
+        var selfClosing = /\/>\s*$/.test(m[6]);
+        tokens.push({type: selfClosing ? 'self' : 'open', value:m[6]});
+      }
+      lastIndex = tokenRegex.lastIndex;
+    }
+    if (lastIndex < xml.length) {
+      var rest = xml.slice(lastIndex);
+      if (rest.trim().length) tokens.push({type:'text', value:rest.trim()});
+    }
+    return tokens;
+  }
+  function tagName(raw){
+    var m = raw.match(/^<\/?([^\s\/>]+)/);
+    return m ? m[1].toLowerCase() : '';
+  }
+  function buildLines(tokens, voidTags){
+    voidTags = voidTags || null;
+    var depth = 0, maxDepth = 0, elemCount = 0, lines = [];
+    tokens.forEach(function(t){
+      if (t.type === 'close') {
+        depth = Math.max(0, depth - 1);
+        lines.push(Object.assign({}, t, {depth:depth}));
+      } else if (t.type === 'open') {
+        if (voidTags && voidTags.has(tagName(t.value))) {
+          lines.push(Object.assign({}, t, {type:'self', depth:depth}));
+          elemCount++;
+        } else {
+          lines.push(Object.assign({}, t, {depth:depth}));
+          elemCount++; depth++; maxDepth = Math.max(maxDepth, depth);
+        }
+      } else if (t.type === 'self') {
+        lines.push(Object.assign({}, t, {depth:depth}));
+        elemCount++;
+      } else {
+        lines.push(Object.assign({}, t, {depth:depth}));
+      }
+    });
+    return {lines:lines, maxDepth:maxDepth, elemCount:elemCount};
+  }
+  function highlightTagLike(raw){
+    var m = raw.match(/^<(\/?)([^\s\/>]+)((?:\s+[^\s=\/>]+(?:=(?:"[^"]*"|'[^']*'|[^\s>]+))?)*)\s*(\/?)>$/);
+    if (!m) return '<span class="tok-tag">' + escapeHtml(raw) + '</span>';
+    var slash = m[1], name = m[2], attrsStr = m[3], selfSlash = m[4];
+    var html = '<span class="tok-punct">&lt;' + slash + '</span><span class="tok-tag">' + escapeHtml(name) + '</span>';
+    var attrRegex = /([^\s=\/>]+)(?:=("[^"]*"|'[^']*'|[^\s>]+))?/g, am;
+    while ((am = attrRegex.exec(attrsStr)) !== null) {
+      if (!am[0].trim()) continue;
+      html += ' <span class="tok-attr">' + escapeHtml(am[1]) + '</span>';
+      if (am[2] !== undefined) html += '<span class="tok-punct">=</span><span class="tok-val">' + escapeHtml(am[2]) + '</span>';
+    }
+    html += '<span class="tok-punct">' + selfSlash + '&gt;</span>';
+    return html;
+  }
+  function highlightToken(t){
+    switch (t.type) {
+      case 'open': case 'close': case 'self': return highlightTagLike(t.value);
+      case 'comment': return '<span class="tok-comment">' + escapeHtml(t.value) + '</span>';
+      case 'cdata': return '<span class="tok-cdata">' + escapeHtml(t.value) + '</span>';
+      case 'decl': case 'doctype': return '<span class="tok-decl">' + escapeHtml(t.value) + '</span>';
+      case 'text': return '<span class="tok-text">' + escapeHtml(t.value) + '</span>';
+      default: return escapeHtml(t.value);
+    }
+  }
+  function renderMarkupLines(lines, unit){
+    if (!lines.length) return '<div class="empty-hint">Hasil akan muncul di sini…</div>';
+    return lines.map(function(l){
+      return '<div>' + unit.repeat(l.depth).replace(/\t/g,'    ').split('').map(function(){return '';}).join('') +
+        escapeHtml(unit.repeat(l.depth)) + highlightToken(l) + '</div>';
+    }).join('');
+  }
+  function plainMarkupLines(lines, unitStr){
+    return lines.map(function(l){ return unitStr.repeat(l.depth) + l.value; }).join('\n');
+  }
+
+  var VOID_TAGS = new Set(['area','base','br','col','embed','hr','img','input','link','meta','param','source','track','wbr']);
+
+  /* ============ JSON HIGHLIGHT ============ */
+  function jsonHighlight(jsonStr){
+    var esc = escapeHtml(jsonStr);
+    return esc.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false)\b|\bnull\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,
+      function(match){
+        var cls;
+        if (/^"/.test(match)) cls = /:$/.test(match) ? 'key' : 'str';
+        else if (/true|false/.test(match)) cls = 'bool';
+        else if (/null/.test(match)) cls = 'null';
+        else cls = 'num';
+        return '<span class="tok-' + cls + '">' + match + '</span>';
+      });
+  }
+
+  /* ============ MD5 (public-domain, Joseph Myers implementation) ============ */
+  function md5cycle(x, k) {
+    var a=x[0], b=x[1], c=x[2], d=x[3];
+    a=ff(a,b,c,d,k[0],7,-680876936); d=ff(d,a,b,c,k[1],12,-389564586); c=ff(c,d,a,b,k[2],17,606105819); b=ff(b,c,d,a,k[3],22,-1044525330);
+    a=ff(a,b,c,d,k[4],7,-176418897); d=ff(d,a,b,c,k[5],12,1200080426); c=ff(c,d,a,b,k[6],17,-1473231341); b=ff(b,c,d,a,k[7],22,-45705983);
+    a=ff(a,b,c,d,k[8],7,1770035416); d=ff(d,a,b,c,k[9],12,-1958414417); c=ff(c,d,a,b,k[10],17,-42063); b=ff(b,c,d,a,k[11],22,-1990404162);
+    a=ff(a,b,c,d,k[12],7,1804603682); d=ff(d,a,b,c,k[13],12,-40341101); c=ff(c,d,a,b,k[14],17,-1502002290); b=ff(b,c,d,a,k[15],22,1236535329);
+    a=gg(a,b,c,d,k[1],5,-165796510); d=gg(d,a,b,c,k[6],9,-1069501632); c=gg(c,d,a,b,k[11],14,643717713); b=gg(b,c,d,a,k[0],20,-373897302);
+    a=gg(a,b,c,d,k[5],5,-701558691); d=gg(d,a,b,c,k[10],9,38016083); c=gg(c,d,a,b,k[15],14,-660478335); b=gg(b,c,d,a,k[4],20,-405537848);
+    a=gg(a,b,c,d,k[9],5,568446438); d=gg(d,a,b,c,k[14],9,-1019803690); c=gg(c,d,a,b,k[3],14,-187363961); b=gg(b,c,d,a,k[8],20,1163531501);
+    a=gg(a,b,c,d,k[13],5,-1444681467); d=gg(d,a,b,c,k[2],9,-51403784); c=gg(c,d,a,b,k[7],14,1735328473); b=gg(b,c,d,a,k[12],20,-1926607734);
+    a=hh(a,b,c,d,k[5],4,-378558); d=hh(d,a,b,c,k[8],11,-2022574463); c=hh(c,d,a,b,k[11],16,1839030562); b=hh(b,c,d,a,k[14],23,-35309556);
+    a=hh(a,b,c,d,k[1],4,-1530992060); d=hh(d,a,b,c,k[4],11,1272893353); c=hh(c,d,a,b,k[7],16,-155497632); b=hh(b,c,d,a,k[10],23,-1094730640);
+    a=hh(a,b,c,d,k[13],4,681279174); d=hh(d,a,b,c,k[0],11,-358537222); c=hh(c,d,a,b,k[3],16,-722521979); b=hh(b,c,d,a,k[6],23,76029189);
+    a=hh(a,b,c,d,k[9],4,-640364487); d=hh(d,a,b,c,k[12],11,-421815835); c=hh(c,d,a,b,k[15],16,530742520); b=hh(b,c,d,a,k[2],23,-995338651);
+    a=ii(a,b,c,d,k[0],6,-198630844); d=ii(d,a,b,c,k[7],10,1126891415); c=ii(c,d,a,b,k[14],15,-1416354905); b=ii(b,c,d,a,k[5],21,-57434055);
+    a=ii(a,b,c,d,k[12],6,1700485571); d=ii(d,a,b,c,k[3],10,-1894986606); c=ii(c,d,a,b,k[10],15,-1051523); b=ii(b,c,d,a,k[1],21,-2054922799);
+    a=ii(a,b,c,d,k[8],6,1873313359); d=ii(d,a,b,c,k[15],10,-30611744); c=ii(c,d,a,b,k[6],15,-1560198380); b=ii(b,c,d,a,k[13],21,1309151649);
+    a=ii(a,b,c,d,k[4],6,-145523070); d=ii(d,a,b,c,k[11],10,-1120210379); c=ii(c,d,a,b,k[2],15,718787259); b=ii(b,c,d,a,k[9],21,-343485551);
+    x[0]=add32(a,x[0]); x[1]=add32(b,x[1]); x[2]=add32(c,x[2]); x[3]=add32(d,x[3]);
+  }
+  function cmn(q,a,b,x,s,t){ a=add32(add32(a,q),add32(x,t)); return add32((a<<s)|(a>>>(32-s)),b); }
+  function ff(a,b,c,d,x,s,t){ return cmn((b&c)|((~b)&d),a,b,x,s,t); }
+  function gg(a,b,c,d,x,s,t){ return cmn((b&d)|(c&(~d)),a,b,x,s,t); }
+  function hh(a,b,c,d,x,s,t){ return cmn(b^c^d,a,b,x,s,t); }
+  function ii(a,b,c,d,x,s,t){ return cmn(c^(b|(~d)),a,b,x,s,t); }
+  function md51(s){
+    var n=s.length, state=[1732584193,-271733879,-1732584194,271733878], i;
+    for (i=64; i<=s.length; i+=64) md5cycle(state, md5blk(s.substring(i-64,i)));
+    s = s.substring(i-64);
+    var tail=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+    for (i=0;i<s.length;i++) tail[i>>2] |= s.charCodeAt(i) << ((i%4)<<3);
+    tail[i>>2] |= 0x80 << ((i%4)<<3);
+    if (i>55){ md5cycle(state,tail); for(i=0;i<16;i++) tail[i]=0; }
+    tail[14]=n*8;
+    md5cycle(state,tail);
+    return state;
+  }
+  function md5blk(s){
+    var blks=[], i;
+    for (i=0;i<64;i+=4) blks[i>>2] = s.charCodeAt(i)+(s.charCodeAt(i+1)<<8)+(s.charCodeAt(i+2)<<16)+(s.charCodeAt(i+3)<<24);
+    return blks;
+  }
+  var HEX = '0123456789abcdef'.split('');
+  function rhex(n){ var s='',j=0; for(;j<4;j++) s+=HEX[(n>>(j*8+4))&0x0F]+HEX[(n>>(j*8))&0x0F]; return s; }
+  function hexJoin(x){ for(var i=0;i<x.length;i++) x[i]=rhex(x[i]); return x.join(''); }
+  function add32(a,b){ return (a+b)&0xFFFFFFFF; }
+  function md5(str){
+    var utf8 = unescape(encodeURIComponent(str));
+    return hexJoin(md51(utf8));
+  }
+
+  /* ============ HUB RENDERING ============ */
+  function renderHub(){
+    var hub = document.getElementById('view-hub');
+    var html = '';
+    Object.keys(CATS).forEach(function(catKey){
+      var cat = CATS[catKey];
+      var toolsInCat = TOOLS.filter(function(t){ return t.cat === catKey; });
+      html += '<div class="cat-block" data-cat="'+catKey+'">';
+      html += '<div class="cat-head"><span class="cat-dot" style="background:'+cat.color+'"></span><h2>'+cat.label+'</h2><div class="cat-line"></div></div>';
+      html += '<div class="card-grid">';
+      toolsInCat.forEach(function(t){
+        html += '<button class="card" data-id="'+t.id+'" data-search="'+ (t.title+' '+t.desc).toLowerCase() +'" style="border-top-color:'+cat.color+'">';
+        html += '<span class="icon" style="color:'+cat.color+'">'+t.icon+'</span>';
+        html += '<h3>'+t.title+'</h3><p>'+t.desc+'</p></button>';
+      });
+      html += '</div></div>';
+    });
+    html += '<div id="no-results">Tidak ada tool yang cocok.</div>';
+    hub.innerHTML = html;
+
+    hub.querySelectorAll('.card').forEach(function(card){
+      card.addEventListener('click', function(){ location.hash = '#/t/' + card.dataset.id; });
+    });
+  }
+
+  document.getElementById('search').addEventListener('input', function(e){
+    var q = e.target.value.trim().toLowerCase();
+    var anyVisible = false;
+    document.querySelectorAll('.cat-block').forEach(function(block){
+      var visibleInBlock = 0;
+      block.querySelectorAll('.card').forEach(function(card){
+        var match = !q || card.dataset.search.indexOf(q) !== -1;
+        card.classList.toggle('hidden', !match);
+        if (match) { visibleInBlock++; anyVisible = true; }
+      });
+      block.classList.toggle('hidden', visibleInBlock === 0);
+    });
+    document.getElementById('no-results').style.display = anyVisible ? 'none' : 'block';
+  });
+
+  document.getElementById('brand-link').addEventListener('click', function(){ location.hash = ''; });
+  document.getElementById('btn-back').addEventListener('click', function(){ location.hash = ''; });
+
+  /* ============ ROUTER ============ */
+  function showHub(){
+    document.getElementById('view-hub').hidden = false;
+    document.getElementById('view-tool').hidden = true;
+    document.getElementById('search').style.display = '';
+  }
+  function showTool(id){
+    var tool = TOOLS.find(function(t){ return t.id === id; });
+    if (!tool) { location.hash = ''; return; }
+    document.getElementById('view-hub').hidden = true;
+    document.getElementById('view-tool').hidden = false;
+    document.getElementById('search').style.display = 'none';
+    document.getElementById('tool-title').textContent = tool.title;
+    var badge = document.getElementById('tool-badge');
+    badge.textContent = CATS[tool.cat].label;
+    badge.style.color = CATS[tool.cat].color;
+    badge.style.borderColor = CATS[tool.cat].color;
+    var body = document.getElementById('tool-body');
+    body.innerHTML = '';
+    var renderer = TOOL_RENDERERS[id];
+    if (renderer) renderer(body); else body.innerHTML = '<p style="padding:28px">Tool belum tersedia.</p>';
+  }
+  function route(){
+    var hash = location.hash;
+    var m = hash.match(/^#\/t\/(.+)$/);
+    if (m) showTool(m[1]); else showHub();
+  }
+  window.addEventListener('hashchange', route);
+
+  /* ============ SHARED TOOL-BODY BUILDERS ============ */
+  function dualPaneShell(inLabel, outLabel, placeholder){
+    return '' +
+      '<div class="toolbar" id="tb"></div>' +
+      '<div id="error-banner"></div>' +
+      '<div class="dual">' +
+        '<div class="pane"><div class="pane-head">' + inLabel + '</div>' +
+          '<textarea id="in" class="code-area" spellcheck="false" placeholder="'+ (placeholder||'') +'"></textarea></div>' +
+        '<div class="pane"><div class="pane-head">' + outLabel + '</div>' +
+          '<div id="out" class="code-area out"><span class="empty-hint">Hasil akan muncul di sini…</span></div></div>' +
+      '</div>' +
+      '<div class="statsbar" id="stats"></div>';
+  }
+  function singlePaneShell(outLabel){
+    return '' +
+      '<div class="toolbar" id="tb"></div>' +
+      '<div id="error-banner"></div>' +
+      '<div class="single-pane"><div class="pane"><div class="pane-head">' + outLabel + '</div>' +
+      '<div id="listout" class="list-panel"></div></div></div>';
+  }
+  function showError(msg){
+    var b = document.getElementById('error-banner');
+    if (!msg) { b.classList.remove('show'); b.textContent=''; return; }
+    b.textContent = msg; b.classList.add('show');
+  }
+  function setStats(pairs){
+    document.getElementById('stats').innerHTML = pairs.map(function(p){
+      return '<span>'+p[0]+': <b>'+p[1]+'</b></span>';
+    }).join('');
+  }
+  function mkBtn(label, cls){ return '<button class="'+(cls||'')+'">'+label+'</button>'; }
+
+  /* ============ TOOL RENDERERS ============ */
+  var TOOL_RENDERERS = {};
+
+  // ---- JSON Formatter ----
+  TOOL_RENDERERS['json-formatter'] = function(body){
+    body.innerHTML = dualPaneShell('input.json','output.json','Tempel JSON di sini…');
+    var tb = document.getElementById('tb');
+    tb.innerHTML = '<label>Indentasi</label><select id="indent"><option value="2">2 spasi</option><option value="4">4 spasi</option><option value="tab">Tab</option></select>'+
+      '<div class="sep"></div>'+mkBtn('Format','primary')+mkBtn('Minify')+mkBtn('Validasi')+
+      '<div class="sep"></div>'+mkBtn('Contoh','ghost')+mkBtn('Bersihkan','ghost')+
+      '<div class="grow"></div>'+mkBtn('Salin Output')+mkBtn('Unduh .json');
+    var btns = tb.querySelectorAll('button');
+    var input = document.getElementById('in'), out = document.getElementById('out');
+    var indentSel = document.getElementById('indent');
+    var lastOut = '';
+    var SAMPLE = '{\n"nama": "Toko Buku Priangan",\n"aktif": true,\n"kota": "Tasikmalaya",\n"produk": [\n{"nama": "Novel Sunda", "harga": 45000},\n{"nama": "Buku Anak", "harga": 30000}\n],\n"catatan": null\n}';
+
+    function stats(rawIn, rawOut){
+      var keys = (rawIn.match(/"(?:\\.|[^"\\])*"\s*:/g) || []).length;
+      setStats([['Karakter', rawIn.length + ' → ' + rawOut.length], ['Jumlah key', keys]]);
+    }
+    function doFormat(){
+      var raw = input.value;
+      if (!raw.trim()) { out.innerHTML = '<span class="empty-hint">Hasil akan muncul di sini…</span>'; showError(''); return; }
+      try {
+        var obj = JSON.parse(raw);
+        var unit = indentSel.value === 'tab' ? '\t' : parseInt(indentSel.value,10);
+        var str = JSON.stringify(obj, null, unit);
+        out.innerHTML = jsonHighlight(str);
+        lastOut = str; showError(''); stats(raw, str);
+      } catch (e) { showError('JSON tidak valid: ' + e.message); }
+    }
+    function doMinify(){
+      var raw = input.value;
+      if (!raw.trim()) return;
+      try {
+        var str = JSON.stringify(JSON.parse(raw));
+        out.innerHTML = jsonHighlight(str);
+        lastOut = str; showError(''); stats(raw, str);
+      } catch (e) { showError('JSON tidak valid: ' + e.message); }
+    }
+    function doValidate(){
+      var raw = input.value;
+      try { JSON.parse(raw); showError(''); toast('JSON valid ✓'); }
+      catch (e) { showError('JSON tidak valid: ' + e.message); }
+    }
+    btns[0].addEventListener('click', doFormat);
+    btns[1].addEventListener('click', doMinify);
+    btns[2].addEventListener('click', doValidate);
+    btns[3].addEventListener('click', function(){ input.value = SAMPLE; doFormat(); });
+    btns[4].addEventListener('click', function(){ input.value=''; out.innerHTML='<span class="empty-hint">Hasil akan muncul di sini…</span>'; showError(''); setStats([]); lastOut=''; });
+    btns[5].addEventListener('click', function(){ copyText(lastOut); });
+    btns[6].addEventListener('click', function(){ if(lastOut) downloadText(lastOut,'formatted.json','application/json'); else toast('Belum ada hasil'); });
+  };
+
+  // ---- XML Formatter ----
+  TOOL_RENDERERS['xml-formatter'] = function(body){
+    renderMarkupTool(body, {
+      filename:'formatted.xml', voidTags:null, validateXml:true,
+      sample:'<?xml version="1.0" encoding="UTF-8"?>\n<!-- Contoh katalog buku -->\n<catalog>\n<book id="bk101" genre="fiksi">\n<title>Petualangan di Priangan</title>\n<author>R. Kusuma</author>\n<price currency="IDR">85000</price>\n</book>\n</catalog>'
+    });
+  };
+
+  // ---- HTML Formatter ----
+  TOOL_RENDERERS['html-formatter'] = function(body){
+    renderMarkupTool(body, {
+      filename:'formatted.html', voidTags:VOID_TAGS, validateXml:false,
+      sample:'<!DOCTYPE html>\n<html>\n<head><title>Contoh</title>\n<meta charset="utf-8"></head>\n<body>\n<h1>Halo Tasikmalaya</h1>\n<p>Ini contoh <b>HTML</b> yang belum rapi.</p>\n<img src="foto.jpg" alt="contoh">\n</body>\n</html>'
+    });
+  };
+
+  function renderMarkupTool(body, cfg){
+    body.innerHTML = dualPaneShell('input','output','Tempel markup di sini…');
+    var tb = document.getElementById('tb');
+    tb.innerHTML = '<label>Indentasi</label><select id="indent"><option value="2">2 spasi</option><option value="4">4 spasi</option><option value="tab">Tab</option></select>'+
+      '<div class="sep"></div>'+mkBtn('Format','primary')+mkBtn('Minify')+mkBtn('Validasi')+
+      '<div class="sep"></div>'+mkBtn('Contoh','ghost')+mkBtn('Bersihkan','ghost')+
+      '<div class="grow"></div>'+mkBtn('Salin Output')+mkBtn('Unduh');
+    var btns = tb.querySelectorAll('button');
+    var input = document.getElementById('in'), out = document.getElementById('out');
+    var indentSel = document.getElementById('indent');
+    var lastOut = '';
+
+    function doFormat(){
+      var raw = input.value;
+      if (!raw.trim()) { out.innerHTML='<span class="empty-hint">Hasil akan muncul di sini…</span>'; showError(''); return; }
+      if (cfg.validateXml) {
+        var doc = new DOMParser().parseFromString(raw, 'text/xml');
+        var errNode = doc.getElementsByTagName('parsererror')[0];
+        if (errNode) showError(errNode.textContent.trim()); else showError('');
+      } else showError('');
+      var unit = indentSel.value === 'tab' ? '\t' : parseInt(indentSel.value,10);
+      var unitStr = indentSel.value === 'tab' ? '\t' : ' '.repeat(unit);
+      var tokens = tokenizeMarkup(raw);
+      var built = buildLines(tokens, cfg.voidTags);
+      out.innerHTML = renderMarkupLines(built.lines, unitStr);
+      lastOut = plainMarkupLines(built.lines, unitStr);
+      setStats([['Karakter', raw.length + ' → ' + lastOut.length], ['Elemen', built.elemCount], ['Kedalaman maks', built.maxDepth]]);
+    }
+    function doMinify(){
+      var raw = input.value;
+      if (!raw.trim()) return;
+      var minified = raw.replace(/>\s+</g,'><').trim();
+      out.innerHTML = '<div>' + escapeHtml(minified) + '</div>';
+      lastOut = minified;
+      setStats([['Karakter', raw.length + ' → ' + minified.length]]);
+    }
+    function doValidate(){
+      var raw = input.value;
+      if (cfg.validateXml) {
+        var doc = new DOMParser().parseFromString(raw, 'text/xml');
+        var errNode = doc.getElementsByTagName('parsererror')[0];
+        if (errNode) { showError(errNode.textContent.trim()); return; }
+        showError(''); toast('XML valid ✓');
+      } else {
+        var tokens = tokenizeMarkup(raw);
+        var stack = [];
+        var problem = null;
+        tokens.forEach(function(t){
+          if (t.type === 'open' && !(cfg.voidTags && cfg.voidTags.has(tagName(t.value)))) stack.push(tagName(t.value));
+          else if (t.type === 'close') {
+            var name = tagName(t.value);
+            if (stack.length && stack[stack.length-1] === name) stack.pop();
+            else problem = 'Tag penutup </' + name + '> tidak cocok dengan pembukaannya.';
+          }
+        });
+        if (problem) showError(problem);
+        else if (stack.length) showError('Tag belum ditutup: <' + stack.join('>, <') + '>');
+        else { showError(''); toast('Struktur HTML seimbang ✓'); }
+      }
+    }
+    btns[0].addEventListener('click', doFormat);
+    btns[1].addEventListener('click', doMinify);
+    btns[2].addEventListener('click', doValidate);
+    btns[3].addEventListener('click', function(){ input.value = cfg.sample; doFormat(); });
+    btns[4].addEventListener('click', function(){ input.value=''; out.innerHTML='<span class="empty-hint">Hasil akan muncul di sini…</span>'; showError(''); setStats([]); lastOut=''; });
+    btns[5].addEventListener('click', function(){ copyText(lastOut); });
+    btns[6].addEventListener('click', function(){ if(lastOut) downloadText(lastOut, cfg.filename, 'text/plain'); else toast('Belum ada hasil'); });
+  }
+
+  // ---- CSS Formatter ----
+  TOOL_RENDERERS['css-formatter'] = function(body){
+    body.innerHTML = dualPaneShell('input.css','output.css','Tempel CSS di sini…');
+    var tb = document.getElementById('tb');
+    tb.innerHTML = '<label>Indentasi</label><select id="indent"><option value="2">2 spasi</option><option value="4">4 spasi</option><option value="tab">Tab</option></select>'+
+      '<div class="sep"></div>'+mkBtn('Format','primary')+mkBtn('Minify')+
+      '<div class="sep"></div>'+mkBtn('Contoh','ghost')+mkBtn('Bersihkan','ghost')+
+      '<div class="grow"></div>'+mkBtn('Salin Output')+mkBtn('Unduh .css');
+    var btns = tb.querySelectorAll('button');
+    var input = document.getElementById('in'), out = document.getElementById('out');
+    var indentSel = document.getElementById('indent');
+    var lastOut = '';
+    var SAMPLE = '.card{background:#12161a;border:1px solid #242b32;padding:16px}\n.card h3{font-size:14px;margin:0 0 5px}\n@media (max-width:600px){.card{padding:10px}}';
+
+    function formatCSS(raw, unitStr){
+      var comments = [];
+      var css = raw.replace(/\r\n?/g,'\n').replace(/\/\*[\s\S]*?\*\//g, function(m){ comments.push(m); return '@@C'+(comments.length-1)+'@@'; });
+      css = css.replace(/\s+/g,' ').trim();
+      css = css.replace(/\s*{\s*/g,'{\n').replace(/;\s*/g,';\n').replace(/\s*}\s*/g,'\n}\n');
+      var lines = css.split('\n').map(function(l){return l.trim();}).filter(Boolean);
+      var depth = 0, output = [];
+      lines.forEach(function(line){
+        if (line.charAt(0) === '}') depth = Math.max(0, depth-1);
+        output.push(unitStr.repeat(depth) + line);
+        if (line.charAt(line.length-1) === '{') depth++;
+      });
+      var result = output.join('\n');
+      result = result.replace(/@@C(\d+)@@/g, function(_, i){ return comments[+i]; });
+      return result;
+    }
+    function minifyCSS(raw){
+      return raw.replace(/\/\*[\s\S]*?\*\//g,'').replace(/\s+/g,' ').replace(/\s*([{}:;,])\s*/g,'$1').replace(/;}/g,'}').trim();
+    }
+    function doFormat(){
+      var raw = input.value;
+      if (!raw.trim()) { out.innerHTML='<span class="empty-hint">Hasil akan muncul di sini…</span>'; return; }
+      var unitStr = indentSel.value === 'tab' ? '\t' : ' '.repeat(parseInt(indentSel.value,10));
+      var result = formatCSS(raw, unitStr);
+      out.innerHTML = '<div>' + escapeHtml(result).replace(/\n/g,'</div><div>') + '</div>';
+      lastOut = result;
+      setStats([['Karakter', raw.length + ' → ' + result.length]]);
+    }
+    function doMinify(){
+      var raw = input.value;
+      if (!raw.trim()) return;
+      var result = minifyCSS(raw);
+      out.innerHTML = '<div>' + escapeHtml(result) + '</div>';
+      lastOut = result;
+      setStats([['Karakter', raw.length + ' → ' + result.length]]);
+    }
+    btns[0].addEventListener('click', doFormat);
+    btns[1].addEventListener('click', doMinify);
+    btns[2].addEventListener('click', function(){ input.value = SAMPLE; doFormat(); });
+    btns[3].addEventListener('click', function(){ input.value=''; out.innerHTML='<span class="empty-hint">Hasil akan muncul di sini…</span>'; setStats([]); lastOut=''; });
+    btns[4].addEventListener('click', function(){ copyText(lastOut); });
+    btns[5].addEventListener('click', function(){ if(lastOut) downloadText(lastOut,'formatted.css','text/css'); else toast('Belum ada hasil'); });
+  };
+
+  // ---- SQL Formatter ----
+  TOOL_RENDERERS['sql-formatter'] = function(body){
+    body.innerHTML = dualPaneShell('input.sql','output.sql','Tempel query SQL di sini…');
+    var tb = document.getElementById('tb');
+    tb.innerHTML = mkBtn('Format','primary')+mkBtn('Minify')+
+      '<div class="sep"></div>'+mkBtn('Contoh','ghost')+mkBtn('Bersihkan','ghost')+
+      '<div class="grow"></div>'+mkBtn('Salin Output')+mkBtn('Unduh .sql');
+    var btns = tb.querySelectorAll('button');
+    var input = document.getElementById('in'), out = document.getElementById('out');
+    var lastOut = '';
+    var SAMPLE = "select siswa.nama, kelas.nama as kelas from siswa inner join kelas on siswa.kelas_id = kelas.id where kelas.tahun_ajaran = '2026' and siswa.aktif = 1 order by siswa.nama limit 50";
+    var CLAUSES = ['LEFT OUTER JOIN','RIGHT OUTER JOIN','INNER JOIN','LEFT JOIN','RIGHT JOIN','FULL JOIN','GROUP BY','ORDER BY','UNION ALL','INSERT INTO','DELETE FROM','SELECT','FROM','WHERE','JOIN','ON','HAVING','LIMIT','OFFSET','VALUES','UPDATE','SET','UNION','AND','OR'];
+
+    function formatSQL(raw){
+      var sql = raw.replace(/\s+/g,' ').trim();
+      CLAUSES.forEach(function(c){
+        var re = new RegExp('\\b' + c.replace(/ /g,'\\s+') + '\\b', 'gi');
+        sql = sql.replace(re, '\n' + c);
+      });
+      var lines = sql.split('\n').map(function(l){return l.trim();}).filter(Boolean);
+      lines = lines.map(function(l){ return /^(AND|OR)\b/i.test(l) ? '  ' + l : l; });
+      return lines.join('\n');
+    }
+    function doFormat(){
+      var raw = input.value;
+      if (!raw.trim()) { out.innerHTML='<span class="empty-hint">Hasil akan muncul di sini…</span>'; return; }
+      var result = formatSQL(raw);
+      out.innerHTML = '<div>' + escapeHtml(result).replace(/\n/g,'</div><div>') + '</div>';
+      lastOut = result;
+      setStats([['Karakter', raw.length + ' → ' + result.length]]);
+    }
+    function doMinify(){
+      var raw = input.value;
+      if (!raw.trim()) return;
+      var result = raw.replace(/\s+/g,' ').trim();
+      out.innerHTML = '<div>' + escapeHtml(result) + '</div>';
+      lastOut = result;
+      setStats([['Karakter', raw.length + ' → ' + result.length]]);
+    }
+    btns[0].addEventListener('click', doFormat);
+    btns[1].addEventListener('click', doMinify);
+    btns[2].addEventListener('click', function(){ input.value = SAMPLE; doFormat(); });
+    btns[3].addEventListener('click', function(){ input.value=''; out.innerHTML='<span class="empty-hint">Hasil akan muncul di sini…</span>'; setStats([]); lastOut=''; });
+    btns[4].addEventListener('click', function(){ copyText(lastOut); });
+    btns[5].addEventListener('click', function(){ if(lastOut) downloadText(lastOut,'formatted.sql','text/plain'); else toast('Belum ada hasil'); });
+  };
+
+  // ---- JSON <-> XML ----
+  TOOL_RENDERERS['json-xml'] = function(body){
+    body.innerHTML = dualPaneShell('input','output','Tempel JSON atau XML di sini…');
+    var tb = document.getElementById('tb');
+    tb.innerHTML = '<label>Indentasi</label><select id="indent"><option value="2">2 spasi</option><option value="4">4 spasi</option></select>'+
+      '<div class="sep"></div>'+mkBtn('JSON → XML','primary')+mkBtn('XML → JSON','primary')+
+      '<div class="sep"></div>'+mkBtn('Contoh JSON','ghost')+mkBtn('Bersihkan','ghost')+
+      '<div class="grow"></div>'+mkBtn('Salin Output')+mkBtn('Unduh');
+    var btns = tb.querySelectorAll('button');
+    var input = document.getElementById('in'), out = document.getElementById('out');
+    var indentSel = document.getElementById('indent');
+    var lastOut = '', lastExt = 'xml';
+    var SAMPLE = '{\n"toko": "Priangan Timur",\n"kota": "Tasikmalaya",\n"produk": [\n{"nama": "Kaos", "harga": 55000},\n{"nama": "Topi", "harga": 35000}\n]\n}';
+
+    function jsonToXmlNode(value, name, depth, unit){
+      var pad = unit.repeat(depth);
+      if (Array.isArray(value)) return value.map(function(v){ return jsonToXmlNode(v, name, depth, unit); }).join('\n');
+      if (value !== null && typeof value === 'object') {
+        var inner = Object.keys(value).map(function(k){ return jsonToXmlNode(value[k], k, depth+1, unit); }).join('\n');
+        return pad + '<' + name + '>\n' + inner + '\n' + pad + '</' + name + '>';
+      }
+      return pad + '<' + name + '>' + escapeHtml(String(value)) + '</' + name + '>';
+    }
+    function convertJsonToXml(){
+      var raw = input.value;
+      var obj = JSON.parse(raw);
+      var unit = ' '.repeat(parseInt(indentSel.value,10));
+      var body_;
+      if (Array.isArray(obj)) body_ = obj.map(function(v){ return jsonToXmlNode(v,'item',1,unit); }).join('\n');
+      else if (typeof obj === 'object' && obj !== null) body_ = Object.keys(obj).map(function(k){ return jsonToXmlNode(obj[k],k,1,unit); }).join('\n');
+      else body_ = unit + String(obj);
+      return '<?xml version="1.0" encoding="UTF-8"?>\n<root>\n' + body_ + '\n</root>';
+    }
+    function elementToObj(el){
+      var children = Array.prototype.filter.call(el.children, function(){ return true; });
+      if (!children.length) return el.textContent.trim();
+      var obj = {};
+      children.forEach(function(child){
+        var val = elementToObj(child);
+        var tag = child.tagName;
+        if (Object.prototype.hasOwnProperty.call(obj, tag)) {
+          if (!Array.isArray(obj[tag])) obj[tag] = [obj[tag]];
+          obj[tag].push(val);
+        } else obj[tag] = val;
+      });
+      return obj;
+    }
+    function convertXmlToJson(){
+      var raw = input.value;
+      var doc = new DOMParser().parseFromString(raw, 'text/xml');
+      if (doc.getElementsByTagName('parsererror').length) throw new Error('XML tidak valid.');
+      var root = doc.documentElement;
+      var obj = {}; obj[root.tagName] = elementToObj(root);
+      var unit = parseInt(indentSel.value,10);
+      return JSON.stringify(obj, null, unit);
+    }
+    btns[0].addEventListener('click', function(){
+      try { var xml = convertJsonToXml(); out.innerHTML = escapeHtml(xml).split('\n').map(function(l){return '<div>'+l+'</div>';}).join(''); lastOut = xml; lastExt='xml'; showError(''); setStats([['Karakter', input.value.length + ' → ' + xml.length]]); }
+      catch(e){ showError('Gagal konversi: ' + e.message); }
+    });
+    btns[1].addEventListener('click', function(){
+      try { var js = convertXmlToJson(); out.innerHTML = jsonHighlight(js); lastOut = js; lastExt='json'; showError(''); setStats([['Karakter', input.value.length + ' → ' + js.length]]); }
+      catch(e){ showError('Gagal konversi: ' + e.message); }
+    });
+    btns[2].addEventListener('click', function(){ input.value = SAMPLE; showError(''); });
+    btns[3].addEventListener('click', function(){ input.value=''; out.innerHTML='<span class="empty-hint">Hasil akan muncul di sini…</span>'; showError(''); setStats([]); lastOut=''; });
+    btns[4].addEventListener('click', function(){ copyText(lastOut); });
+    btns[5].addEventListener('click', function(){ if(lastOut) downloadText(lastOut, 'converted.'+lastExt, 'text/plain'); else toast('Belum ada hasil'); });
+  };
+
+  // ---- CSV <-> JSON ----
+  TOOL_RENDERERS['csv-json'] = function(body){
+    body.innerHTML = dualPaneShell('input','output','Tempel CSV atau JSON di sini…');
+    var tb = document.getElementById('tb');
+    tb.innerHTML = '<label>Pemisah</label><select id="delim"><option value=",">Koma (,)</option><option value=";">Titik koma (;)</option><option value="\t">Tab</option></select>'+
+      '<div class="sep"></div>'+mkBtn('CSV → JSON','primary')+mkBtn('JSON → CSV','primary')+
+      '<div class="sep"></div>'+mkBtn('Contoh CSV','ghost')+mkBtn('Bersihkan','ghost')+
+      '<div class="grow"></div>'+mkBtn('Salin Output')+mkBtn('Unduh');
+    var btns = tb.querySelectorAll('button');
+    var input = document.getElementById('in'), out = document.getElementById('out');
+    var delimSel = document.getElementById('delim');
+    var lastOut = '', lastExt = 'json';
+    var SAMPLE = 'nama,kota,harga\nKaos Sunda,Tasikmalaya,55000\nTopi Rajut,Garut,35000\nTas Anyam,Ciamis,90000';
+
+    function parseCSV(text, delim){
+      var rows=[], row=[], field='', inQuotes=false;
+      for (var i=0;i<text.length;i++){
+        var c = text[i];
+        if (inQuotes){
+          if (c === '"'){ if (text[i+1] === '"'){ field+='"'; i++; } else inQuotes=false; }
+          else field += c;
+        } else {
+          if (c === '"') inQuotes = true;
+          else if (c === delim){ row.push(field); field=''; }
+          else if (c === '\n'){ row.push(field); rows.push(row); row=[]; field=''; }
+          else if (c === '\r'){ /* skip */ }
+          else field += c;
+        }
+      }
+      if (field.length || row.length){ row.push(field); rows.push(row); }
+      return rows.filter(function(r){ return !(r.length===1 && r[0]===''); });
+    }
+    function csvToJson(text, delim){
+      var rows = parseCSV(text, delim);
+      if (!rows.length) return [];
+      var headers = rows[0];
+      return rows.slice(1).map(function(r){
+        var obj = {};
+        headers.forEach(function(h,i){ obj[h] = r[i] !== undefined ? r[i] : ''; });
+        return obj;
+      });
+    }
+    function jsonToCsv(jsonStr, delim){
+      var data = JSON.parse(jsonStr);
+      var arr = Array.isArray(data) ? data : [data];
+      var headerSet = new Set();
+      arr.forEach(function(row){ Object.keys(row||{}).forEach(function(k){ headerSet.add(k); }); });
+      var headers = Array.from(headerSet);
+      function esc(v){
+        if (v === undefined || v === null) v = '';
+        v = String(v);
+        if (v.indexOf(delim) !== -1 || v.indexOf('"') !== -1 || v.indexOf('\n') !== -1) v = '"' + v.replace(/"/g,'""') + '"';
+        return v;
+      }
+      var lines = [headers.map(esc).join(delim)];
+      arr.forEach(function(row){ lines.push(headers.map(function(h){ return esc(row ? row[h] : ''); }).join(delim)); });
+      return lines.join('\n');
+    }
+    btns[0].addEventListener('click', function(){
+      try {
+        var arr = csvToJson(input.value, delimSel.value);
+        var js = JSON.stringify(arr, null, 2);
+        out.innerHTML = jsonHighlight(js); lastOut = js; lastExt='json'; showError('');
+        setStats([['Baris data', arr.length]]);
+      } catch(e){ showError('Gagal konversi CSV: ' + e.message); }
+    });
+    btns[1].addEventListener('click', function(){
+      try {
+        var csv = jsonToCsv(input.value, delimSel.value);
+        out.innerHTML = escapeHtml(csv).split('\n').map(function(l){return '<div>'+l+'</div>';}).join(''); lastOut = csv; lastExt='csv'; showError('');
+        setStats([['Karakter', input.value.length + ' → ' + csv.length]]);
+      } catch(e){ showError('Gagal konversi JSON: ' + e.message); }
+    });
+    btns[2].addEventListener('click', function(){ input.value = SAMPLE; showError(''); });
+    btns[3].addEventListener('click', function(){ input.value=''; out.innerHTML='<span class="empty-hint">Hasil akan muncul di sini…</span>'; showError(''); setStats([]); lastOut=''; });
+    btns[4].addEventListener('click', function(){ copyText(lastOut); });
+    btns[5].addEventListener('click', function(){ if(lastOut) downloadText(lastOut,'converted.'+lastExt,'text/plain'); else toast('Belum ada hasil'); });
+  };
+
+  // ---- Base64 ----
+  TOOL_RENDERERS['base64'] = function(body){
+    body.innerHTML = dualPaneShell('input','output','Tulis atau tempel teks / Base64 di sini…');
+    var tb = document.getElementById('tb');
+    tb.innerHTML = mkBtn('Encode ke Base64','primary')+mkBtn('Decode dari Base64','primary')+
+      '<div class="sep"></div>'+mkBtn('Contoh','ghost')+mkBtn('Bersihkan','ghost')+
+      '<div class="grow"></div>'+mkBtn('Salin Output')+mkBtn('Unduh .txt');
+    var btns = tb.querySelectorAll('button');
+    var input = document.getElementById('in'), out = document.getElementById('out');
+    var lastOut = '';
+    function encode(str){ var bytes = new TextEncoder().encode(str); var bin=''; bytes.forEach(function(b){ bin += String.fromCharCode(b); }); return btoa(bin); }
+    function decode(str){ var bin = atob(str.trim()); var bytes = Uint8Array.from(bin, function(c){ return c.charCodeAt(0); }); return new TextDecoder().decode(bytes); }
+    btns[0].addEventListener('click', function(){
+      var raw = input.value; var result = encode(raw);
+      out.innerHTML = '<div>'+escapeHtml(result)+'</div>'; lastOut=result; showError('');
+      setStats([['Karakter', raw.length + ' → ' + result.length]]);
+    });
+    btns[1].addEventListener('click', function(){
+      try { var result = decode(input.value); out.innerHTML = '<div>'+escapeHtml(result)+'</div>'; lastOut=result; showError('');
+        setStats([['Karakter', input.value.length + ' → ' + result.length]]);
+      } catch(e){ showError('Base64 tidak valid.'); }
+    });
+    btns[2].addEventListener('click', function(){ input.value = 'Halo dari Tasikmalaya!'; showError(''); });
+    btns[3].addEventListener('click', function(){ input.value=''; out.innerHTML='<span class="empty-hint">Hasil akan muncul di sini…</span>'; showError(''); setStats([]); lastOut=''; });
+    btns[4].addEventListener('click', function(){ copyText(lastOut); });
+    btns[5].addEventListener('click', function(){ if(lastOut) downloadText(lastOut,'base64.txt','text/plain'); else toast('Belum ada hasil'); });
+  };
+
+  // ---- URL Encode/Decode ----
+  TOOL_RENDERERS['url-encode'] = function(body){
+    body.innerHTML = dualPaneShell('input','output','Tulis teks atau URL di sini…');
+    var tb = document.getElementById('tb');
+    tb.innerHTML = '<label>Mode</label><select id="mode"><option value="component">Component (aman untuk parameter)</option><option value="full">Full URI</option></select>'+
+      '<div class="sep"></div>'+mkBtn('Encode','primary')+mkBtn('Decode','primary')+
+      '<div class="sep"></div>'+mkBtn('Contoh','ghost')+mkBtn('Bersihkan','ghost')+
+      '<div class="grow"></div>'+mkBtn('Salin Output')+mkBtn('Unduh .txt');
+    var btns = tb.querySelectorAll('button');
+    var input = document.getElementById('in'), out = document.getElementById('out');
+    var modeSel = document.getElementById('mode');
+    var lastOut = '';
+    btns[0].addEventListener('click', function(){
+      var raw = input.value;
+      var result = modeSel.value === 'full' ? encodeURI(raw) : encodeURIComponent(raw);
+      out.innerHTML = '<div>'+escapeHtml(result)+'</div>'; lastOut=result; showError('');
+      setStats([['Karakter', raw.length + ' → ' + result.length]]);
+    });
+    btns[1].addEventListener('click', function(){
+      try {
+        var result = modeSel.value === 'full' ? decodeURI(input.value) : decodeURIComponent(input.value);
+        out.innerHTML = '<div>'+escapeHtml(result)+'</div>'; lastOut=result; showError('');
+        setStats([['Karakter', input.value.length + ' → ' + result.length]]);
+      } catch(e){ showError('Teks tidak bisa didecode (format tidak valid).'); }
+    });
+    btns[2].addEventListener('click', function(){ input.value = 'https://guru.cintabuku.site/cari?nama=Ahmad Fauzi&kota=Tasikmalaya'; showError(''); });
+    btns[3].addEventListener('click', function(){ input.value=''; out.innerHTML='<span class="empty-hint">Hasil akan muncul di sini…</span>'; showError(''); setStats([]); lastOut=''; });
+    btns[4].addEventListener('click', function(){ copyText(lastOut); });
+    btns[5].addEventListener('click', function(){ if(lastOut) downloadText(lastOut,'url-encoded.txt','text/plain'); else toast('Belum ada hasil'); });
+  };
+
+  // ---- Case Converter ----
+  TOOL_RENDERERS['case-converter'] = function(body){
+    body.innerHTML = '' +
+      '<div class="toolbar" id="tb2"><label>Teks input</label></div>' +
+      '<div class="pane"><textarea id="in" class="code-area" style="min-height:120px" spellcheck="false" placeholder="Tulis atau tempel teks di sini…"></textarea></div>' +
+      '<div class="case-buttons" id="cb"></div>' +
+      '<div class="pane-head" style="padding:9px 28px">Hasil</div>' +
+      '<div class="case-out" id="cout">Hasil akan muncul di sini…</div>' +
+      '<div class="statsbar" id="stats"></div>';
+    var input = document.getElementById('in'), cout = document.getElementById('cout');
+    var cb = document.getElementById('cb');
+    var modes = [
+      {label:'UPPERCASE', fn: function(s){ return s.toUpperCase(); }},
+      {label:'lowercase', fn: function(s){ return s.toLowerCase(); }},
+      {label:'Title Case', fn: function(s){ return s.replace(/\w\S*/g, function(t){ return t.charAt(0).toUpperCase()+t.substr(1).toLowerCase(); }); }},
+      {label:'Sentence case', fn: function(s){ return s.toLowerCase().replace(/(^\s*\w|[.!?]\s*\w)/g, function(c){ return c.toUpperCase(); }); }},
+      {label:'camelCase', fn: function(s){ return words(s).map(function(w,i){ return i===0 ? w.toLowerCase() : cap(w); }).join(''); }},
+      {label:'PascalCase', fn: function(s){ return words(s).map(cap).join(''); }},
+      {label:'snake_case', fn: function(s){ return words(s).map(function(w){ return w.toLowerCase(); }).join('_'); }},
+      {label:'kebab-case', fn: function(s){ return words(s).map(function(w){ return w.toLowerCase(); }).join('-'); }},
+      {label:'CONSTANT_CASE', fn: function(s){ return words(s).map(function(w){ return w.toUpperCase(); }).join('_'); }}
+    ];
+    function words(s){ return s.trim().replace(/([a-z])([A-Z])/g,'$1 $2').split(/[\s_\-]+/).filter(Boolean); }
+    function cap(w){ return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase(); }
+    cb.innerHTML = modes.map(function(m,i){ return '<button data-i="'+i+'">'+m.label+'</button>'; }).join('');
+    cb.querySelectorAll('button').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var mode = modes[+btn.dataset.i];
+        var result = mode.fn(input.value || '');
+        cout.textContent = result || 'Hasil akan muncul di sini…';
+        var words_ = (input.value.trim().match(/\S+/g) || []).length;
+        document.getElementById('stats').innerHTML = '<span>Karakter: <b>'+input.value.length+'</b></span><span>Kata: <b>'+words_+'</b></span>'+
+          '<div class="grow"></div><span style="cursor:pointer;text-decoration:underline" id="copyres">Salin hasil</span>';
+        var copyLink = document.getElementById('copyres');
+        if (copyLink) copyLink.addEventListener('click', function(){ copyText(result); });
+      });
+    });
+  };
+
+  // ---- HTML Entity Encode/Decode ----
+  TOOL_RENDERERS['html-entities'] = function(body){
+    body.innerHTML = dualPaneShell('input','output','Tulis teks atau HTML entity di sini…');
+    var tb = document.getElementById('tb');
+    tb.innerHTML = '<label class="opt-group"><input type="checkbox" id="nonascii"> Encode juga karakter non-ASCII</label>'+
+      '<div class="sep"></div>'+mkBtn('Encode','primary')+mkBtn('Decode','primary')+
+      '<div class="sep"></div>'+mkBtn('Contoh','ghost')+mkBtn('Bersihkan','ghost')+
+      '<div class="grow"></div>'+mkBtn('Salin Output')+mkBtn('Unduh .txt');
+    var btns = tb.querySelectorAll('button');
+    var input = document.getElementById('in'), out = document.getElementById('out');
+    var nonascii = document.getElementById('nonascii');
+    var lastOut = '';
+    function encode(str, all){
+      var o = str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+      if (all) o = o.replace(/[\u00A0-\uFFFF]/g, function(c){ return '&#'+c.charCodeAt(0)+';'; });
+      return o;
+    }
+    function decode(str){ var ta = document.createElement('textarea'); ta.innerHTML = str; return ta.value; }
+    btns[0].addEventListener('click', function(){
+      var raw = input.value; var result = encode(raw, nonascii.checked);
+      out.innerHTML = '<div>'+escapeHtml(result)+'</div>'; lastOut=result;
+      setStats([['Karakter', raw.length + ' → ' + result.length]]);
+    });
+    btns[1].addEventListener('click', function(){
+      var result = decode(input.value);
+      out.innerHTML = '<div>'+escapeHtml(result)+'</div>'; lastOut=result;
+      setStats([['Karakter', input.value.length + ' → ' + result.length]]);
+    });
+    btns[2].addEventListener('click', function(){ input.value = '<Toko "Buku" & Alat Tulis> — Tasikmalaya'; });
+    btns[3].addEventListener('click', function(){ input.value=''; out.innerHTML='<span class="empty-hint">Hasil akan muncul di sini…</span>'; setStats([]); lastOut=''; });
+    btns[4].addEventListener('click', function(){ copyText(lastOut); });
+    btns[5].addEventListener('click', function(){ if(lastOut) downloadText(lastOut,'entities.txt','text/plain'); else toast('Belum ada hasil'); });
+  };
+
+  // ---- Word & Character Counter ----
+  TOOL_RENDERERS['word-counter'] = function(body){
+    body.innerHTML = '' +
+      '<div class="pane"><div class="pane-head">Tulis atau tempel teks</div>'+
+      '<textarea id="in" class="code-area" style="min-height:260px" spellcheck="false" placeholder="Tulis atau tempel teks di sini…"></textarea></div>'+
+      '<div class="statsbar" id="stats" style="flex-wrap:wrap"></div>';
+    var input = document.getElementById('in');
+    function update(){
+      var raw = input.value;
+      var chars = raw.length;
+      var charsNoSpace = raw.replace(/\s/g,'').length;
+      var words = (raw.trim().match(/\S+/g) || []).length;
+      var sentences = (raw.match(/[^.!?]+[.!?]+/g) || (raw.trim() ? [raw] : [])).length;
+      var paragraphs = raw.split(/\n\s*\n/).filter(function(p){ return p.trim().length; }).length;
+      var readMin = Math.max(1, Math.ceil(words / 200));
+      setStats([
+        ['Karakter', chars], ['Tanpa spasi', charsNoSpace], ['Kata', words],
+        ['Kalimat', sentences], ['Paragraf', paragraphs], ['Estimasi baca', readMin + ' menit']
+      ]);
+    }
+    input.addEventListener('input', update);
+    update();
+  };
+
+  // ---- Hash Generator ----
+  TOOL_RENDERERS['hash-generator'] = function(body){
+    body.innerHTML = '' +
+      '<div class="toolbar" id="tb"><label>Teks input</label><div class="grow"></div></div>'+
+      '<div class="pane"><textarea id="in" class="code-area" style="min-height:120px" spellcheck="false" placeholder="Tulis teks yang mau di-hash…"></textarea></div>'+
+      '<div class="toolbar">'+mkBtn('Generate Hash','primary')+'</div>'+
+      '<div class="list-panel" id="hashout"></div>';
+    var input = document.getElementById('in');
+    var out = document.getElementById('hashout');
+    var btn = document.querySelector('.toolbar button');
+    async function shaHash(str, algo){
+      var buf = new TextEncoder().encode(str);
+      var hashBuf = await crypto.subtle.digest(algo, buf);
+      return Array.from(new Uint8Array(hashBuf)).map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+    }
+    function row(label, value){
+      return '<div class="list-row"><span class="lbl">'+label+'</span><span class="val">'+escapeHtml(value)+'</span><button data-copy="'+encodeURIComponent(value)+'">Salin</button></div>';
+    }
+    btn.addEventListener('click', async function(){
+      var raw = input.value;
+      if (!raw) { toast('Isi teks dulu'); return; }
+      out.innerHTML = '<p style="color:var(--muted);font-family:JetBrains Mono,monospace;font-size:12.5px">Menghitung…</p>';
+      var md5Hash = md5(raw);
+      var sha1Hash, sha256Hash, sha512Hash;
+      try {
+        sha1Hash = await shaHash(raw,'SHA-1');
+        sha256Hash = await shaHash(raw,'SHA-256');
+        sha512Hash = await shaHash(raw,'SHA-512');
+      } catch(e){ sha1Hash = sha256Hash = sha512Hash = '(tidak tersedia)'; }
+      out.innerHTML = row('MD5', md5Hash) + row('SHA-1', sha1Hash) + row('SHA-256', sha256Hash) + row('SHA-512', sha512Hash);
+      out.querySelectorAll('button[data-copy]').forEach(function(b){
+        b.addEventListener('click', function(){ copyText(decodeURIComponent(b.dataset.copy)); });
+      });
+    });
+  };
+
+  // ---- UUID Generator ----
+  TOOL_RENDERERS['uuid-generator'] = function(body){
+    body.innerHTML = '' +
+      '<div class="toolbar" id="tb"><label>Jumlah</label><input type="number" id="qty" value="5" min="1" max="50">'+
+      '<div class="sep"></div>'+mkBtn('Generate','primary')+mkBtn('Salin Semua')+
+      '</div><div class="list-panel" id="uout"></div>';
+    var qty = document.getElementById('qty');
+    var out = document.getElementById('uout');
+    var btns = document.querySelectorAll('#tb button');
+    var current = [];
+    function gen(){
+      var n = Math.min(50, Math.max(1, parseInt(qty.value,10) || 1));
+      current = [];
+      for (var i=0;i<n;i++) current.push(crypto.randomUUID());
+      out.innerHTML = current.map(function(u,i){
+        return '<div class="list-row"><span class="lbl">#'+(i+1)+'</span><span class="val">'+u+'</span><button data-copy="'+u+'">Salin</button></div>';
+      }).join('');
+      out.querySelectorAll('button[data-copy]').forEach(function(b){ b.addEventListener('click', function(){ copyText(b.dataset.copy); }); });
+    }
+    btns[0].addEventListener('click', gen);
+    btns[1].addEventListener('click', function(){ if(current.length) copyText(current.join('\n')); else toast('Generate dulu'); });
+    gen();
+  };
+
+  // ---- Password Generator ----
+  TOOL_RENDERERS['password-generator'] = function(body){
+    body.innerHTML = '' +
+      '<div class="toolbar" id="tb">'+
+      '<label>Panjang</label><input type="number" id="len" value="16" min="4" max="128">'+
+      '<div class="sep"></div>'+
+      '<label class="opt-group"><input type="checkbox" id="up" checked> Huruf besar</label>'+
+      '<label class="opt-group"><input type="checkbox" id="lo" checked> Huruf kecil</label>'+
+      '<label class="opt-group"><input type="checkbox" id="nu" checked> Angka</label>'+
+      '<label class="opt-group"><input type="checkbox" id="sy" checked> Simbol</label>'+
+      '<div class="sep"></div><label>Jumlah</label><input type="number" id="qty" value="5" min="1" max="30">'+
+      '</div>'+
+      '<div class="toolbar">'+mkBtn('Generate','primary')+mkBtn('Salin Semua')+'</div>'+
+      '<div class="list-panel" id="pout"></div>';
+    var len = document.getElementById('len'), qty = document.getElementById('qty');
+    var up = document.getElementById('up'), lo = document.getElementById('lo'), nu = document.getElementById('nu'), sy = document.getElementById('sy');
+    var out = document.getElementById('pout');
+    var btns = document.querySelectorAll('.toolbar:nth-of-type(2) button');
+    var current = [];
+    var SETS = { up:'ABCDEFGHIJKLMNOPQRSTUVWXYZ', lo:'abcdefghijklmnopqrstuvwxyz', nu:'0123456789', sy:'!@#$%^&*()-_=+[]{}' };
+    function genOne(){
+      var charset = '';
+      if (up.checked) charset += SETS.up;
+      if (lo.checked) charset += SETS.lo;
+      if (nu.checked) charset += SETS.nu;
+      if (sy.checked) charset += SETS.sy;
+      if (!charset) charset = SETS.lo + SETS.nu;
+      var L = Math.min(128, Math.max(4, parseInt(len.value,10) || 16));
+      var arr = new Uint32Array(L);
+      crypto.getRandomValues(arr);
+      var pw = '';
+      for (var i=0;i<L;i++) pw += charset[arr[i] % charset.length];
+      return pw;
+    }
+    function gen(){
+      var n = Math.min(30, Math.max(1, parseInt(qty.value,10) || 1));
+      current = [];
+      for (var i=0;i<n;i++) current.push(genOne());
+      out.innerHTML = current.map(function(p,i){
+        return '<div class="list-row"><span class="lbl">#'+(i+1)+'</span><span class="val">'+escapeHtml(p)+'</span><button data-copy="'+encodeURIComponent(p)+'">Salin</button></div>';
+      }).join('');
+      out.querySelectorAll('button[data-copy]').forEach(function(b){ b.addEventListener('click', function(){ copyText(decodeURIComponent(b.dataset.copy)); }); });
+    }
+    btns[0].addEventListener('click', gen);
+    btns[1].addEventListener('click', function(){ if(current.length) copyText(current.join('\n')); else toast('Generate dulu'); });
+    gen();
+  };
+
+  // ---- Lorem Ipsum Generator ----
+  TOOL_RENDERERS['lorem-ipsum'] = function(body){
+    body.innerHTML = '' +
+      '<div class="toolbar" id="tb">'+
+      '<label>Tipe</label><select id="type"><option value="paragraphs">Paragraf</option><option value="sentences">Kalimat</option><option value="words">Kata</option></select>'+
+      '<label>Jumlah</label><input type="number" id="qty" value="3" min="1" max="50">'+
+      '<div class="sep"></div>'+mkBtn('Generate','primary')+mkBtn('Salin')+
+      '</div>'+
+      '<div class="single-pane"><div class="pane"><div class="pane-head">output</div><div id="lout" class="code-area out"><span class="empty-hint">Hasil akan muncul di sini…</span></div></div></div>'+
+      '<div class="statsbar" id="stats"></div>';
+    var type = document.getElementById('type'), qty = document.getElementById('qty');
+    var out = document.getElementById('lout');
+    var btns = document.querySelectorAll('#tb button');
+    var BANK = ('lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat duis aute irure dolor in reprehenderit voluptate velit esse cillum dolore eu fugiat nulla pariatur excepteur sint occaecat cupidatat non proident sunt culpa qui officia deserunt mollit anim id est laborum').split(' ');
+    var lastOut = '';
+    function randWord(){ return BANK[Math.floor(Math.random()*BANK.length)]; }
+    function sentence(len){
+      var n = len || (6 + Math.floor(Math.random()*10));
+      var words = []; for (var i=0;i<n;i++) words.push(randWord());
+      var s = words.join(' ');
+      return s.charAt(0).toUpperCase() + s.slice(1) + '.';
+    }
+    function paragraph(first){
+      var n = 3 + Math.floor(Math.random()*4);
+      var sentences = [];
+      if (first) sentences.push('Lorem ipsum dolor sit amet, consectetur adipiscing elit.');
+      for (var i = sentences.length; i<n; i++) sentences.push(sentence());
+      return sentences.join(' ');
+    }
+    function generate(){
+      var n = Math.min(50, Math.max(1, parseInt(qty.value,10) || 1));
+      var result;
+      if (type.value === 'words') {
+        var words = []; for (var i=0;i<n;i++) words.push(randWord());
+        result = words.join(' ');
+      } else if (type.value === 'sentences') {
+        var arr = []; for (var i=0;i<n;i++) arr.push(sentence());
+        result = arr.join(' ');
+      } else {
+        var paras = []; for (var i=0;i<n;i++) paras.push(paragraph(i===0));
+        result = paras.join('\n\n');
+      }
+      out.innerHTML = '<div>' + escapeHtml(result).replace(/\n\n/g,'</div><div><br></div><div>').replace(/\n/g,'</div><div>') + '</div>';
+      lastOut = result;
+      setStats([['Karakter', result.length], ['Kata', (result.match(/\S+/g)||[]).length]]);
+    }
+    btns[0].addEventListener('click', generate);
+    btns[1].addEventListener('click', function(){ copyText(lastOut); });
+    generate();
+  };
+
+  /* ============ INIT ============ */
+  renderHub();
+  route();
+})();
+</script>
+
+</body>
+</html>
